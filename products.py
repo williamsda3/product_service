@@ -11,13 +11,15 @@ class Product(db.Model):
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
+    last_transaction = db.Column(db.Integer, nullable=True)
 
     def as_dict(self):
         return {
             'id': self.id,
             'name': self.name,
             'price': self.price,
-            'quantity': self.quantity
+            'quantity': self.quantity,
+            'last_transaction' : self.last_transaction
         }
 
 # Initialize the database
@@ -41,10 +43,30 @@ def create_product():
     if not data or 'name' not in data or 'price' not in data or 'quantity' not in data:
         return jsonify({'error': 'Invalid data'}), 400
 
-    product = Product(name=data['name'], price=data['price'], quantity=data['quantity'])
+    product = Product(name=data['name'], price=data['price'], quantity=data['quantity'], last_transaction=data['last_transaction'])
     db.session.add(product)
     db.session.commit()
     return jsonify({'message': 'Product created successfully'}), 201
 
+@app.route('/products/<int:product_id>/reduce/<int:quantity>', methods=['POST'])
+def reduce_product(product_id, quantity):
+    product = Product.query.get_or_404(product_id)
+    if product:
+        if quantity <= product.quantity:
+            product.quantity -= quantity
+            product.last_transaction = quantity
+            db.session.commit()
+            return jsonify(product.as_dict()), 200
+        else:
+            product.last_transaction = product.quantity
+            product.quantity = 0
+            db.session.commit()
+            return jsonify({'message': f'Can only remove {product.quantity}'}), 201
+    else:
+        return jsonify({'error': 'Could not reduce product quantity'}), 400
+
+
+    
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='127.0.0.1', port=5050, debug=True)
