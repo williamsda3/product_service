@@ -27,15 +27,21 @@ with app.app_context():
     db.create_all()
 
 # Routes
+
+# Retrieve a list of available grocery products, including their names, prices, and quantities in stock.
+
 @app.route('/products', methods=['GET'])
 def get_products():
     products = Product.query.all()
     return jsonify([product.as_dict() for product in products])
 
+# Get details about a specific product by its unique ID
 @app.route('/products/<int:product_id>', methods=['GET'])
 def get_product(product_id):
     product = Product.query.get_or_404(product_id)
     return jsonify(product.as_dict())
+
+# Allow the addition of new grocery products to the inventory with information such as name, price, and quantity
 
 @app.route('/products', methods=['POST'])
 def create_product():
@@ -48,6 +54,7 @@ def create_product():
     db.session.commit()
     return jsonify({'message': 'Product created successfully'}), 201
 
+# Created a function to reduce the products quantity as is gets moved to the users Cart
 @app.route('/products/<int:product_id>/reduce/<int:quantity>', methods=['POST'])
 def reduce_product(product_id, quantity):
     product = Product.query.get_or_404(product_id)
@@ -69,4 +76,4 @@ def reduce_product(product_id, quantity):
     
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5050, debug=True)
+    app.run( debug=True)
